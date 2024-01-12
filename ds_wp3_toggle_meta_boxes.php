@@ -2,8 +2,8 @@
 /*
 Plugin Name: Toggle Meta Boxes Sitewide
 Plugin URI: http://wordpress.org/extend/plugins/toggle-meta-boxes-sitewide/
-Version: 3.8.1.1
-Description: WP3.7.1 multisite network mu-plugin. Go to Network-->Settings to "Enable Administration Meta Boxes". Meta boxes(post, page, link, and dashboard) are unchecked and disabled by default. Extra options to toggle the Quick Edit buttons, Media buttons, Screen Options and Help links. Toggle to Restrict Comment Editing to Editor+ roles. SuperAdmin comments can only be edited by a SuperAdmin.
+Version: 4.6
+Description: WP Multisite network plugin. Go to Network-->Settings to "Enable Administration Meta Boxes". Meta boxes(post, page, link, and dashboard) are unchecked and disabled by default. Extra options to toggle the Quick Edit buttons, Media buttons, Screen Options and Help links. Toggle to Restrict Comment Editing to Editor+ roles. SuperAdmin comments can only be edited by a SuperAdmin.
 Author: D Sader
 Author URI: http://dsader.snowotherway.org
 Network: true
@@ -20,32 +20,30 @@ Network: true
  
 */
 
-class ds_meta {
+class DS_Meta {
 		var $l10n_prefix;
 
-	function ds_meta() {
+	function __construct() {
 			$this->l10n_prefix = 'toggle-meta-boxes-sitewide';
 
 	//------------------------------------------------------------------------//
 	//---Hooks----------------------------------------------------------------//
 	//------------------------------------------------------------------------//
-	add_action( 'admin_init', array(&$this, 'ds_localization_init' ));
-	add_action( 'wpmu_options', array(&$this, 'ds_meta_box_option' )); // "Menu Settings->Enable Administration Menus->Plugins"
-	add_action( 'admin_head', array(&$this, 'ds_toggle_meta_boxes' )); // toggle metaboxes
-	add_action( 'admin_head', array(&$this, 'ds_extras_remove'  )); // toggle some extras
-	add_action( 'wp_dashboard_setup', array(&$this, 'ds_remove_dashboard_widgets' ));
-	add_action( 'wp_network_dashboard_setup', array(&$this, 'ds_remove_network_dashboard_widgets' ));
-	add_filter( 'comment_row_actions', array(&$this, 'ds_remove_comment_edit'), 1, 2); //Comment Editing Restricition
-	add_filter( 'map_meta_cap', array(&$this, 'ds_network_admin_restrict_comment_editing'), 10, 4 ); //Comment Editing Restricitons
-	add_action( 'admin_head-nav-menus.php', array(&$this, 'ds_nav_menus' ));
-//	add_filter( 'manage_nav-menus_columns', array(&$this, 'ds_nav_menu_manage_columns'),99 ); //not working yet: TODO
+	add_action( 'admin_init', array($this, 'ds_localization_init' ));
+	add_action( 'wpmu_options', array($this, 'ds_meta_box_option' )); // "Menu Settings->Enable Administration Menus->Plugins"
+	add_action( 'admin_head', array($this, 'ds_toggle_meta_boxes' )); // toggle metaboxes
+	add_action( 'admin_head', array($this, 'ds_extras_remove'  )); // toggle some extras
+	add_action( 'wp_dashboard_setup', array($this, 'ds_remove_dashboard_widgets' ));
+	add_action( 'wp_network_dashboard_setup', array($this, 'ds_remove_network_dashboard_widgets' ));
+	add_filter( 'comment_row_actions', array($this, 'ds_remove_comment_edit'), 1, 2); //Comment Editing Restricition
+	add_filter( 'map_meta_cap', array($this, 'ds_network_admin_restrict_comment_editing'), 10, 4 ); //Comment Editing Restricitons
+	add_action( 'admin_head-nav-menus.php', array($this, 'ds_nav_menus' ));
+	//add_filter( 'manage_nav-menus_columns', array($this, 'ds_nav_menu_manage_columns'),99 ); //not working yet: TODO
 	
-}
+	}
 
 
 	function ds_localization_init() {
-		// Localization toggle-meta-boxes-sitewide-es_ES.po
-//		load_plugin_textdomain( 'toggle-meta-boxes-sitewide', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
 
 				load_plugin_textdomain( 
 					$this->l10n_prefix,                        // Plugin text domain reference
@@ -55,11 +53,9 @@ class ds_meta {
 	}
 
 	function ds_nav_menu_manage_columns($array) {
-		//I want these advanced link properties hidden, better than this
 		$menu_perms = get_site_option( "menu_items" );
 		if( isset($menu_perms[ 'nav_menu_links_adv' ]) ) {
 
-	
 		$array = array(
 			'_title' => __('Show advanced menu properties'),
 			'cb' => '<input type="checkbox" />',
@@ -68,13 +64,9 @@ class ds_meta {
 			'xfn' => __('Link Relationship (XFN)'),
 			'description' => __('Description'),
 		);
-//			$user = wp_get_current_user();
-//			update_user_option($user->ID, 'managenav-menuscolumnshidden',
-//			array( 0 => 'link-target', 1 => 'css-classes', 2 => 'xfn', 3 => 'description', ), true);
-
-	return $array;
+		return $array;
+		}
 	}
-}
 
 
 	function ds_nav_menus() {
@@ -252,28 +244,68 @@ class ds_meta {
 	 	echo '<style>#contextual-help-link-wrap { display: none;}</style>';
 	// Quick Edit
  	//disable quickedit in post rows
- 	if( !isset($menu_perms[ 'quick_edit_posts' ]) ) 
-		add_filter('post_row_actions', create_function('$actions, $post', 'unset($actions["inline hide-if-no-js"]); return $actions ;'), 10, 2); 
+ 	if( !isset($menu_perms[ 'quick_edit_posts' ]) ) {
+		add_filter('post_row_actions', 
+		function ($actions, $post) {
+            unset($actions["inline hide-if-no-js"]);
+            return $actions;
+        }, 10, 2);
+	}
+		
  	//disable quickedit in page rows
- 	if( !isset($menu_perms[ 'quick_edit_pages' ]) ) 
-		add_filter('page_row_actions', create_function('$actions, $post', 'unset($actions["inline hide-if-no-js"]); return $actions ;'), 10, 2);
+ 	if( !isset($menu_perms[ 'quick_edit_pages' ]) ) {
+		add_filter('page_row_actions', 
+		function ($actions, $post) {
+            unset($actions["inline hide-if-no-js"]);
+            return $actions;
+		}, 10, 2);
+	}
 
  	//disable quickedit in any tag rows
- 	if( !isset($menu_perms[ 'quick_edit_tag' ]) ) 
-		add_filter('tag_row_actions', create_function('$actions, $post', 'unset($actions["inline hide-if-no-js"]); return $actions ;'), 10, 2);
+ 	if( !isset($menu_perms[ 'quick_edit_tag' ]) ) {
+		add_filter('tag_row_actions', 
+		function ($actions, $post) {
+            unset($actions["inline hide-if-no-js"]);
+            return $actions;
+		}, 10, 2);
+	}
+	
  	//disable quickedit in taxonomy=post_tag rows
- 	if( !isset($menu_perms[ 'quick_edit_post_tag' ]) ) 
-		add_filter('post_tag_row_actions', create_function('$actions, $post', 'unset($actions["inline hide-if-no-js"]); return $actions ;'), 10, 2);
+ 	if( !isset($menu_perms[ 'quick_edit_post_tag' ]) ) {
+		add_filter('post_tag_row_actions', 
+		function ($actions, $post) {
+            unset($actions["inline hide-if-no-js"]);
+            return $actions;
+		}, 10, 2);
+	}
+
  	//disable quickedit in taxonomy=category rows
- 	if( !isset($menu_perms[ 'quick_edit_category' ]) ) 
-		add_filter('category_row_actions', create_function('$actions, $post', 'unset($actions["inline hide-if-no-js"]); return $actions ;'), 10, 2);
+ 	if( !isset($menu_perms[ 'quick_edit_category' ]) ) {
+		add_filter('category_row_actions', 
+		function ($actions, $post) {
+            unset($actions["inline hide-if-no-js"]);
+            return $actions;
+		}, 10, 2);
+	}
+
 	//disable quickedit in taxonomy=link_category rows
-	if( !isset($menu_perms[ 'quick_edit_link_category' ]) ) 
-		add_filter('link_category_row_actions', create_function('$actions, $post', 'unset($actions["inline hide-if-no-js"]); return $actions ;'), 10, 2);
+	if( !isset($menu_perms[ 'quick_edit_link_category' ]) ) {
+		add_filter('link_category_row_actions', 
+		function ($actions, $post) {
+            unset($actions["inline hide-if-no-js"]);
+            return $actions;
+		}, 10, 2);
+	}
 
 	//disable quickedit in comment rows
-	if( !isset($menu_perms[ 'quick_edit_comments' ]) ) 
-		add_filter('comment_row_actions', create_function('$actions, $post', 'unset($actions["quickedit"]); return $actions ;'), 10, 2);
+	if( !isset($menu_perms[ 'quick_edit_comments' ]) ) { 
+		add_filter('comment_row_actions', 
+		function ($actions, $post) {
+			unset($actions["quickedit"]); 
+			return $actions;
+		}, 10, 2);
+	}
+		
 	// Media Buttons
 	if( !isset($menu_perms[ 'media_buttons' ]) ) 
 	 	remove_action( 'media_buttons', 'media_buttons' );
@@ -403,7 +435,5 @@ class ds_meta {
 <?php
 }
 }
-if (class_exists("ds_meta")) {
-	$ds_meta = new ds_meta();	
-}
+new DS_Meta();	
 ?>
